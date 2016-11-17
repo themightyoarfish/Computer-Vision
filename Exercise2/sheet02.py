@@ -33,7 +33,7 @@ def local_contrast(img):
 
 def entropy(img):
 
-    n = img.shape[0] * img.shape[1]
+    n = img.size
     h, _ = np.histogram(img, 256) 
     h = h.astype('float') / n
     e = 0
@@ -89,20 +89,18 @@ def he(img):
         The equalized image.
     """
     
-    equalized = np.zeros(img.shape)
+    equalized = np.zeros(img.shape, dtype=np.uint8)
     hist, _= np.histogram(img, 256)
-    h = hist / (img.shape[0] * img.shape[1])
+    h = hist / img.size
     cumsum = h.cumsum()
-    for i in range(img.shape[0]):
-        for j in range(img.shape[1]):
-            val = img[i,j]
-            equalized[i,j]= np.ceil(256 * cumsum[val]) - 1
-
+    # for all gray values, change image in all pixels with that value
+    for v in range(256):
+        equalized[img == v] = np.ceil(256 * cumsum[v]) - 1
     return equalized
 
 
 #img = imread('canada.png', mode = 'L')
-img = imread('dark.png', mode = 'L')
+# img = imread('dark.png', mode = 'L')
 
 # plt.title("Image Entropy value: {}".format(entropy(img)))
 # plt.imshow(img, cmap = plt.get_cmap('gray'), vmin=0, vmax=255)
@@ -111,11 +109,56 @@ img = imread('dark.png', mode = 'L')
 # plt.hist(img.flatten(),256,(0,255))
 # plt.show()
 
-img2 = he(img)
-plt.title("Image Entropy value: {}".format(entropy(img2)))
-plt.imshow(img2, cmap = plt.get_cmap('gray'), vmin=0, vmax=255)
-plt.show()
+# img2 = he(img)
+# plt.title("Image Entropy value: {}".format(entropy(img2)))
+# plt.imshow(img2, cmap = plt.get_cmap('gray'), vmin=0, vmax=255)
+# plt.show()
 
-plt.hist(img2.flatten(),256,(0,255))
-plt.show()
-print(img2.min(),img2.max())
+# plt.hist(img2.flatten(),256,(0,255))
+# plt.show()
+# print(img2.min(),img2.max())
+
+
+def ahe(img, size = (16,16)):
+    """
+    Apply adaptive histogram equalization (AHE) to the image.
+    
+    img: numpy.ndarray (dtype = uint8)
+        The image to equalize.
+    size: tuple of ints
+        The size of the surrounding for which the histogram of each pixel is
+        to be computed.
+        
+    Returns
+    -------
+    equalized: numpy.ndarray (dtype = uint8)
+        The equalized image.
+    """
+    
+    n         = img.shape[0]
+    m         = img.shape[1]
+    equalized = np.zeros(img.shape, np.uint8)
+    for i in range(n):
+        for j in range(m):
+            region         = img[max(0, i-size[0]):min(i+size[0], n), max(0, j-size[1]):min(j+size[1], m)]
+            max_region     = np.max(region)
+            equalized[i,j] = np.sum(region < img[i,j]) * max_region / region.size
+
+    return equalized
+
+img = imread('canada.png', mode = 'L')
+
+# plt.title("Image Entropy value: {}".format(entropy(img)))
+# plt.imshow(img, cmap = plt.get_cmap('gray'), vmin=0, vmax=255)
+# plt.show()
+
+# plt.hist(img.flatten(),256,(0,255))
+# plt.show()
+
+img2 = ahe(img, size=(8,8))
+# plt.title("Image Entropy value: {}".format(entropy(img2)))
+# plt.imshow(img2, cmap = plt.get_cmap('gray'), vmin=0, vmax=255)
+# plt.show()
+
+# plt.hist(img2.flatten(),256,(0,255))
+# plt.show()
