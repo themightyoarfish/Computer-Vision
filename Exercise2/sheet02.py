@@ -134,13 +134,15 @@ def ahe(img, size = (16,16)):
     equalized: numpy.ndarray (dtype = uint8)
         The equalized image.
     """
-    
+
+    h         = size[0] // 2
+    w         = size[1] // 2
     n         = img.shape[0]
     m         = img.shape[1]
     equalized = np.zeros(img.shape, np.uint8)
     for i in range(n):
         for j in range(m):
-            region         = img[max(0, i-size[0]):min(i+size[0], n), max(0, j-size[1]):min(j+size[1], m)]
+            region         = img[max(0, i-h):min(i+h, n), max(0, j-w):min(j+w, m)]
             max_region     = np.max(region)
             equalized[i,j] = np.sum(region < img[i,j]) * max_region / region.size
 
