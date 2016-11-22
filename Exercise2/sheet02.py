@@ -143,12 +143,11 @@ def ahe(img, size = (16,16)):
     for i in range(n):
         for j in range(m):
             region         = img[max(0, i-h):min(i+h, n), max(0, j-w):min(j+w, m)]
-            max_region     = np.max(region)
-            equalized[i,j] = np.sum(region < img[i,j]) * max_region / region.size
+            equalized[i,j] = np.sum(region < img[i,j]) * 255 / region.size
 
     return equalized
 
-img = imread('canada.png', mode = 'L')
+img = imread('canada.png', mode='L')
 
 # plt.title("Image Entropy value: {}".format(entropy(img)))
 # plt.imshow(img, cmap = plt.get_cmap('gray'), vmin=0, vmax=255)
