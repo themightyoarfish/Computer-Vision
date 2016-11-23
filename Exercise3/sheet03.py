@@ -125,41 +125,68 @@ def my_morph(A,B,ratio):
     result = (ratio * d_b + (1 - ratio) * d_a)
     return result > 0
 
-img1 = plt.imread("kreis.png") > 0
-img2 = plt.imread("engelstrompete.png") > 0
+# img1 = plt.imread("kreis.png") > 0
+# img2 = plt.imread("engelstrompete.png") > 0
 
-plt.gray()
-for i, ratio in enumerate(np.linspace(0, 1, 6), 1):
-    plt.subplot(2, 3, i)
-    plt.imshow(my_morph(img1, img2, ratio))
-    plt.axis('off')
-plt.show()
+# plt.gray()
+# for i, ratio in enumerate(np.linspace(0, 1, 6), 1):
+#     plt.subplot(2, 3, i)
+#     plt.imshow(my_morph(img1, img2, ratio))
+#     plt.axis('off')
+# plt.show()
 
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.ndimage.morphology as morph
 
-# def my_skeletonize(img):
-#     """
-#     Compute the skeloton of a binary image using hit_or_miss operator.
+def my_skeletonize(img):
+    """
+    Compute the skeloton of a binary image using hit_or_miss operator.
     
-#     Parameters
-#     ----------
-#     img : ndarray of bools
-#         Binary image to be skeletonized.
+    Parameters
+    ----------
+    img : ndarray of bools
+        Binary image to be skeletonized.
     
-#     Returns
-#     -------
-#     skeleton : ndarray of bools
-#         The skeleton of the input image.
-#     """
+    Returns
+    -------
+    skeleton : ndarray of bools
+        The skeleton of the input image.
+    """
     
-#     skeleton = np.zeros(img.shape,np.bool)
-    
-#     # FIXME: put your code here!
+    # no idea why this works  ̄\_(ツ)_/ ̄
+    # these are the elements from the slides
+    element1 = np.array(
+                [[0,1,1],
+                 [0,1,1],
+                 [0,1,1]])
+    element2 = np.array(
+                [[1,1,1],
+                 [0,1,1],
+                 [0,0,1]])
+    elements = [
+            element1,
+            np.fliplr(element1),
+            element1.T,
+            np.flipud(element1.T),
+            element2,
+            np.fliplr(element2.T),
+            np.fliplr(element2),
+            element2.T
+        ]
 
-
-#     return skeleton
+    # this iteratively removes the pieces of the image for which the structuring
+    # element hits (why does it work #clueless)
+    skeleton = img.copy()
+    while True:
+        last = skeleton
+        for structuring_element in elements:
+            # this computes parts we can erase
+            hm = morph.binary_hit_or_miss(skeleton, structuring_element) 
+            skeleton = skeleton & ~hm  # and not X removes X's elements from img
+        if np.all(skeleton == last): # end if nothing more to erase
+            break
+    return skeleton
 
 # img = plt.imread("engelstrompete.png") > 0
 # skel = my_skeletonize(img)
