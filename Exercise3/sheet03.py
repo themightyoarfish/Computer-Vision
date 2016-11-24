@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy.ndimage.morphology as morph
 
-def my_boundary(img, ksize=(10,10)):
+def my_boundary(img):
     """
     Compute boundary of binary image.
 
@@ -17,7 +17,12 @@ def my_boundary(img, ksize=(10,10)):
         The boundary as a binary image.
     """
     
-    return img ^ morph.binary_erosion(img, np.ones(ksize))
+    structuring_element = np.ones((3,3))
+    structuring_element[0,0] = 0
+    structuring_element[2,2] = 0
+    structuring_element[0,2] = 0
+    structuring_element[2,0] = 0
+    return img ^ morph.binary_erosion(img, structuring_element)
     
     
 # img = plt.imread("engelstrompete.png") > 0
@@ -30,7 +35,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.ndimage import morphology as morph, generate_binary_structure
 
-def my_distance_transform(img, **kwargs):
+def my_distance_transform(img):
     """
     Distance transform of binary image.
 
@@ -46,18 +51,17 @@ def my_distance_transform(img, **kwargs):
     """
 
     dt1 = np.zeros(img.shape, np.int32)
-    c = 1
+    c = 0
     img_wo_boundary = img.copy()
     # while not completely eroded
     while np.any(img_wo_boundary):
         # find boundary
-        boundary = my_boundary(img_wo_boundary, **kwargs)
+        boundary = my_boundary(img_wo_boundary)
         img_wo_boundary ^= boundary # shave of current boundary
         dt1[boundary] = c # boundary can be used as mask
         c += 1 # make brighter with every step
 
-    result = dt1
-    return result / result.max()
+    return dt1
 
 def my_generalized_distance_transform(img, **kwargs):
     dt1 = np.zeros(img.shape, np.int32)
@@ -89,8 +93,9 @@ def my_generalized_distance_transform(img, **kwargs):
 
 
 # img = plt.imread("engelstrompete.png") > 0
+# dt = my_distance_transform(img)
 # plt.gray()
-# plt.imshow(my_distance_transform(img, ksize=(10,10)))
+# plt.imshow(dt+50*img)
 # plt.show()
 
 
@@ -119,8 +124,8 @@ def my_morph(A,B,ratio):
         A binary intermediate image between A and B.
     """
 
-    d_a = my_generalized_distance_transform(A)
-    d_b = my_generalized_distance_transform(B)
+    d_a = my_distance_transform(A)
+    d_b = my_distance_transform(B)
 
     result = (ratio * d_b + (1 - ratio) * d_a)
     return result > 0
@@ -160,10 +165,18 @@ def my_skeletonize(img):
                 [[0,1,1],
                  [0,1,1],
                  [0,1,1]])
+    element1_c = np.array(
+                [[1,1,0],
+                 [1,0,0],
+                 [1,1,0]])
     element2 = np.array(
                 [[1,1,1],
                  [0,1,1],
                  [0,0,1]])
+    element2_c = np.array(
+                [[1,0,0],
+                 [1,0,0],
+                 [1,1,1]])
     elements = [
             element1,
             np.fliplr(element1),
@@ -175,14 +188,25 @@ def my_skeletonize(img):
             element2.T
         ]
 
+    elements_c = [
+            element1_c,
+            np.fliplr(element1_c),
+            element1_c.T,
+            np.flipud(element1_c.T),
+            element2_c,
+            np.fliplr(element2_c.T),
+            np.fliplr(element2_c),
+            element2_c.T
+        ]
+
     # this iteratively removes the pieces of the image for which the structuring
     # element hits (why does it work #clueless)
     skeleton = img.copy()
     while True:
         last = skeleton
-        for structuring_element in elements:
+        for (s1, s2) in zip(elements, elements_c):
             # this computes parts we can erase
-            hm = morph.binary_hit_or_miss(skeleton, structuring_element) 
+            hm = morph.binary_hit_or_miss(skeleton, s1, s2) 
             skeleton = skeleton & ~hm  # and not X removes X's elements from img
         if np.all(skeleton == last): # end if nothing more to erase
             break
