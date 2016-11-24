@@ -160,23 +160,26 @@ def my_skeletonize(img):
     """
     
     # no idea why this works  ̄\_(ツ)_/ ̄
-    # these are the elements from the slides
+    # these are the elements from the slides. Don't care are 0s, meaning
+    # whatever the image at such a location is, it does not matter. We need to
+    # form the complementary kernels by hand since the Don't cares would
+    # otherwise be set to 1
     element1 = np.array(
-                [[0,1,1],
-                 [0,1,1],
-                 [0,1,1]])
-    element1_c = np.array(
-                [[1,1,0],
-                 [1,0,0],
-                 [1,1,0]])
-    element2 = np.array(
-                [[1,1,1],
+                [[0,0,1],
                  [0,1,1],
                  [0,0,1]])
-    element2_c = np.array(
+    element1_c = np.array(
                 [[1,0,0],
                  [1,0,0],
-                 [1,1,1]])
+                 [1,0,0]])
+    element2 = np.array(
+                [[0,1,1],
+                 [0,1,1],
+                 [0,0,0]])
+    element2_c = np.array(
+                [[0,0,0],
+                 [1,0,0],
+                 [1,1,0]])
     elements = [
             element1,
             np.fliplr(element1),
@@ -212,11 +215,10 @@ def my_skeletonize(img):
             break
     return skeleton
 
-# img = plt.imread("engelstrompete.png") > 0
-# skel = my_skeletonize(img)
-# result = morph.distance_transform_cdt(img, metric = 'taxicab') + 50*img
-# result[morph.binary_dilation(skel)] = 0
-# plt.gray()
-# plt.imshow(result)
-# plt.show()
-
+img = plt.imread("engelstrompete.png") > 0
+skel = my_skeletonize(img)
+result = morph.distance_transform_cdt(img, metric = 'taxicab') + 50*img
+result[morph.binary_dilation(skel)] = 0
+plt.gray()
+plt.imshow(result)
+plt.show()
