@@ -149,16 +149,97 @@ def cooccurrence(img, dx=1, dy=1):
 
 
 # plt.figure(figsize=(12, 12))
-plt.gray()
+# plt.gray()
+# plt.imshow(img)
+# plt.show()
+
+
+# plt.figure(figsize=(12, 12))
+# i = 0
+# for p in patches:
+#     plt.subplot(len(patches),3,i+1); plt.axis('off'); plt.imshow(p)
+#     plt.subplot(len(patches),3,i+2); plt.imshow(cooccurrence(p,1,0))
+#     plt.subplot(len(patches),3,i+3); plt.imshow(cooccurrence(p,0,1))
+#     i += 3
+# plt.show()
+
+
+from collections import namedtuple
+Pixel = namedtuple('Pixel', ['i', 'j', 'v'])
+
+class Graph:
+    def __init__(self):
+        self.edges = set()
+    def add_edge(self, edge):
+        self.edges.add(edge)
+    def remove_edge(self, edge):
+        self.edges.remove(edge)
+    def merge_regions(self, region, replacement):
+        for edge in self.edges.copy():
+            if edge.source == region:
+                edge.dest = replacement
+                self.remove_edge(edge)
+            if edge.dest == region:
+                edge.source = replacement
+                self.remove_edge(edge)
+        # print("Num edges: %d" % len(self.edges))
+
+class Edge:
+
+    def homogeneous(self, threshold):
+        pixels = list(map(lambda p: p.v, self.source.pixels.union(self.dest.pixels)))
+        return (max(pixels) - min(pixels)) < threshold
+
+    def __init__(self, r1, r2):
+        self.source = r1
+        self.dest = r2
+
+class Region:
+    def __init__(self, pixels, label):
+        self.pixels = set(pixels)
+        self.label = label
+
+    def merge(self, other):
+        return Region(self.pixels.union(other.pixels), self.label)
+
+
+img = misc.imread('segments.png', mode='L')[:40,:40]
+
 plt.imshow(img)
 plt.show()
 
+graph = Graph()
+label_cnt = 0
+for i in np.arange(img.shape[0] - 1):
+    for j in np.arange(img.shape[1] - 1):
+        graph.add_edge(Edge(Region([Pixel(i, j, img[i,j])], label_cnt),
+            Region([Pixel(i+1, j, img[i+1,j])], label_cnt+1)))
+        graph.add_edge(Edge(Region([Pixel(i, j, img[i,j])], label_cnt+2),
+            Region([Pixel(i, j+1, img[i,j+1])], label_cnt+3)))
+        graph.add_edge(Edge(Region([Pixel(i, j, img[i,j])], label_cnt+4),
+            Region([Pixel(i+1, j+1, img[i+1,j+1])], label_cnt+5)))
+        label_cnt += 6
 
-plt.figure(figsize=(12, 12))
-i = 0
-for p in patches:
-    plt.subplot(len(patches),3,i+1); plt.axis('off'); plt.imshow(p)
-    plt.subplot(len(patches),3,i+2); plt.imshow(cooccurrence(p,1,0))
-    plt.subplot(len(patches),3,i+3); plt.imshow(cooccurrence(p,0,1))
-    i += 3
+def find_edge(graph, threshold):
+    for e in graph.edges:
+        if e.homogeneous(threshold):
+            return e
+    return None
+
+edge_found = True
+while edge_found:
+    edge = find_edge(graph, 10)
+    if not edge:
+        edge_found = False
+    else:
+        new_reg = edge.source.merge(edge.dest)
+        graph.merge_regions(edge.source, new_reg)
+
+labeled = np.zeros(img.shape)
+regions = set([e.source for e in graph.edges] + [e.dest for e in graph.edges])
+for r in regions:
+    for p in r.pixels:
+        labeled[p.i, p.j] = r.label
+
+plt.imshow(labeled)
 plt.show()
