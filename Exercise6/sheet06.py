@@ -216,7 +216,7 @@ def my_inverse_hough_line(accumulator, shape):
 # plt.imshow(img2)
 # plt.show()
 
-def sector_mask(shape,centre,radius,angle_range):
+def circular_mask(shape,centre,radius,angle_range):
     """
     From http://stackoverflow.com/a/18354475/2397253
     Return a boolean mask for a circular sector. The start/stop angles in  
@@ -256,7 +256,7 @@ def my_hough_circle(img, radius=10):
     for x, y in edge_pts:
         if (img.shape[0] - radius > x >= radius and img.shape[1] - radius > y >=
                 radius):
-            mask = sector_mask(img.shape, (x, y), radius, (0,360))
+            mask = circular_mask(img.shape, (x, y), radius, (0,360))
             accumulator[mask] += 1
 
     return accumulator
