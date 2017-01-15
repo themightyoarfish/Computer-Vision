@@ -155,85 +155,120 @@ amplitude = np.abs(img_ft)
 # # **c)** Now implement a 2-dimensional version of Fourier transform for images, using the formula from the lecture. Compare your result with the output of `fft2`.
 
 
-def fourier2d(img):
-    """
-    Perform discrete 2D Fourier transform of a given image.
-    """
+# def fourier2d(img):
+#     """
+#     Perform discrete 2D Fourier transform of a given image.
+#     """
 
-    ft = np.zeros(img.shape, dtype=np.complex)
-    M = img.shape[0]
-    N = img.shape[1]
-    for u in range(0, img.shape[0]):
-        for v in range(0, img.shape[1]):
-            # use meshgrid to make (xx,yy) pairs for all coords in x and y. 
-            # Like this we can evaluate the expression on a grid with fixed u, v
-            # for all values of x and y at once
-            xx, yy = np.meshgrid(np.arange(M), np.arange(N))
-            ft[u,v] = np.sum(img[xx, yy] * np.exp(-1j * 2 * np.pi * (u*xx/M +
-                v*yy/N)))
-    return ft
+#     ft = np.zeros(img.shape, dtype=np.complex)
+#     M = img.shape[0]
+#     N = img.shape[1]
+#     for u in range(0, img.shape[0]):
+#         for v in range(0, img.shape[1]):
+#             # use meshgrid to make (xx,yy) pairs for all coords in x and y. 
+#             # Like this we can evaluate the expression on a grid with fixed u, v
+#             # for all values of x and y at once
+#             xx, yy = np.meshgrid(np.arange(M), np.arange(N))
+#             ft[u,v] = np.sum(img[xx, yy] * np.exp(-1j * 2 * np.pi * (u*xx/M +
+#                 v*yy/N)))
+#     return ft
 
-img = misc.imread('dolly.png', mode = 'F')[:100,:100]
+# img = misc.imread('dolly.png', mode = 'F')[:100,:100]
 
-img_ft = fft2(img)
-img_ft_shift = fftshift(img_ft)
+# img_ft = fft2(img)
+# img_ft_shift = fftshift(img_ft)
 
-amplitude = np.abs(img_ft_shift)
-phase = np.angle(img_ft)
+# amplitude = np.abs(img_ft_shift)
+# phase = np.angle(img_ft)
 
-my_img_ft = fourier2d(img)
-my_img_ft_shift = fftshift(img_ft)
+# my_img_ft = fourier2d(img)
+# my_img_ft_shift = fftshift(img_ft)
 
-my_amplitude = np.abs(my_img_ft_shift)
-my_phase = np.angle(my_img_ft)
+# my_amplitude = np.abs(my_img_ft_shift)
+# my_phase = np.angle(my_img_ft)
 
-f, ax = plt.subplots(4,2)
-ax[0,0].set_title("NP Log amplitude information")
-ax[0,0].imshow(np.log(amplitude))
-ax[0,1].set_title("NP Log amplitude histogram")
-# histograms?? how do I get the power spectrum?
-ax[0,1].hist(amplitude.flatten(), bins=200, log=True)
+# f, ax = plt.subplots(4,2)
+# ax[0,0].set_title("NP Log amplitude information")
+# ax[0,0].imshow(np.log(amplitude))
+# ax[0,1].set_title("NP Log amplitude histogram")
+# # histograms?? how do I get the power spectrum?
+# ax[0,1].hist(amplitude.flatten(), bins=200, log=True)
 
-ax[1,0].set_title("NP Phase information")
-ax[1,0].imshow(phase)
-ax[1,1].set_title("NP Phase histogram")
-ax[1,1].hist(phase.flatten(), bins=200)
+# ax[1,0].set_title("NP Phase information")
+# ax[1,0].imshow(phase)
+# ax[1,1].set_title("NP Phase histogram")
+# ax[1,1].hist(phase.flatten(), bins=200)
 
-ax[2,0].set_title("My Log amplitude information")
-ax[2,0].imshow(np.log(my_amplitude))
-ax[2,1].set_title("My Log amplitude histogram")
-# histograms?? how do I get the power spectrum?
-ax[2,1].hist(my_amplitude.flatten(), bins=200, log=True)
+# ax[2,0].set_title("My Log amplitude information")
+# ax[2,0].imshow(np.log(my_amplitude))
+# ax[2,1].set_title("My Log amplitude histogram")
+# # histograms?? how do I get the power spectrum?
+# ax[2,1].hist(my_amplitude.flatten(), bins=200, log=True)
 
-ax[3,0].set_title("My Phase information")
-ax[3,0].imshow(my_phase)
-ax[3,1].set_title("My Phase histogram")
-ax[3,1].hist(my_phase.flatten(), bins=200)
+# ax[3,0].set_title("My Phase information")
+# ax[3,0].imshow(my_phase)
+# ax[3,1].set_title("My Phase histogram")
+# ax[3,1].hist(my_phase.flatten(), bins=200)
 
-f.tight_layout()
-# f.show()
+# f.tight_layout()
+# # f.show()
+
+# plt.show()
+
+
+# ## Exercise 3 (Applying Fourier Transform – 6p)
+# 
+# 1. Read the image `text_deg.jpg`, display it and apply Fourier transform. The resulting amplitude should show the angle of the text.
+# 
+# 2. Try to automatically get the rotation angle from the Fourier space. There are different ways to achieve this.
+#    Hints:
+#    * You may apply an erosion operation to strengthen the text sections and thereby get
+#      better (i.e. less noisy) amplitude values.
+#    * You may threshold the amplitudes, to only keep “relevant” values. You can then compute the angle of the largest relevant value.
+#    * Alternatively, you may apply methods you know from other lectures to get the main component and compute its angle.
+# 
+# 3. Rotate the image back to its originally intended orientation (`scipy.misc.imrotate`).
+
+import numpy as np
+from scipy import misc
+from scipy.ndimage.morphology import binary_erosion
+import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.rcParams.update({'font.size': 10})
+
+img = misc.imread('text_deg.jpg')
+text_thresh = 240
+img = img > text_thresh
+
+structure = np.ones((2,2))
+img = binary_erosion(img, structure)
+
+f = plt.figure()
+ax = f.add_subplot(2,2,1)
+ax.set_title("theta = %d + %s erosion" % (text_thresh, structure.shape))
+ax.imshow(img)
+
+ft = np.fft.fft2(img)
+amp, phase = (np.abs(ft), np.angle(ft))
+
+amp_thresh = 8
+amp[np.log(amp) < amp_thresh] = 0
+
+ax = f.add_subplot(2,2,2)
+ax.set_title("log((shift(amp) >= %d) + 1)" % (amp_thresh))
+ax.imshow(np.log(np.fft.fftshift(amp + 1)))
+
+from skimage.transform import hough_line, hough_line_peaks
+hough, angles, dists = hough_line(amp)
+peak_vals, peak_angles, peak_dists = hough_line_peaks(hough, angles, dists)
+peak_angles_deg = np.rad2deg(peak_angles)
+
+ax = f.add_subplot(2,2,3)
+ax.imshow(hough)
+ax.set_title("Hough transform of amplitude")
+
+ax = f.add_subplot(2,2,4)
+ax.set_title("img rotated by %f°" % peak_angles_deg[0])
+ax.imshow(misc.imrotate(img, peak_angles_deg[0]))
 
 plt.show()
-
-
-# # ## Exercise 3 (Applying Fourier Transform – 6p)
-# # 
-# # 1. Read the image `text_deg.jpg`, display it and apply Fourier transform. The resulting amplitude should show the angle of the text.
-# # 
-# # 2. Try to automatically get the rotation angle from the Fourier space. There are different ways to achieve this.
-# #    Hints:
-# #    * You may apply an erosion operation to strengthen the text sections and thereby get
-# #      better (i.e. less noisy) amplitude values.
-# #    * You may threshold the amplitudes, to only keep “relevant” values. You can then compute the angle of the largest relevant value.
-# #    * Alternatively, you may apply methods you know from other lectures to get the main component and compute its angle.
-# # 
-# # 3. Rotate the image back to its originally intended orientation (`scipy.misc.imrotate`).
-
-# # In[ ]:
-
-# import numpy as np
-# from scipy import misc
-# import matplotlib.pyplot as plt
-
-# # FIXME: put your code here!
-
