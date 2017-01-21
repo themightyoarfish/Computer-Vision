@@ -58,12 +58,19 @@ def pca(data):
     Results:
         pc - an array holding the principal components as columns
     """
+    # apparently, the dot product of a (20, 32256) array consumes > 9G of memory
+    # oO for unfathomable reasons. Numpy just seems to copy it around thousands
+    # of times. Hence, this exercise is computationally unsolvable for me
+    # Even with fixing the dtype of the loaded images to 1 byte (which would
+    # have the product occupy only ~1G), numpy multiplies everything and still
+    # brings the system to a halt
+
     # seems hard to believe, but this is actually sum(np.outer(row,row) for row in data)
-    autocorr = np.dot(data.T, data)
+    autocorr = data.T.dot(data)
     autocorr = autocorr / autocorr.mean()
     evals, evecs = np.linalg.eig(autocorr)
     
-    return pc
+    return evecs
 
 ################################################################################
 #                                  Exercise 3                                  #
@@ -88,7 +95,7 @@ def read_images_from_directory(directory,suffix,shape):
     """
     
     # initialize the image array and name list
-    images = np.empty((0, *shape))
+    images = np.empty((0, *shape), dtype=np.uint8)
     names = []
 
     # now loop through all image files in the directory
@@ -96,7 +103,7 @@ def read_images_from_directory(directory,suffix,shape):
         if os.path.isfile(file_name):
 
             # load each image (as double)
-            img = misc.imread(file_name, mode = 'F')
+            img = misc.imread(file_name, mode = 'L')
             
             # check for correct size
             if img.shape == shape:
@@ -112,5 +119,6 @@ img_shape = (192 ,168);
 train_imgs, train_names = read_images_from_directory('trainimg', 'pgm', img_shape)
 m, n, k = train_imgs.shape
 train_imgs_flat = np.reshape(train_imgs, (m, n * k))
+import ipdb; ipdb.set_trace()
 
 evecs = pca(train_imgs_flat)
