@@ -7,14 +7,16 @@ import matplotlib.pyplot as plt
 from skimage import color, measure
 import skimage.filters
 
-def batch_euclid(X,Y, channels):
-    return np.sqrt(np.sum(np.square(X[:,channels] - Y[:,channels]), axis=1))
 
-def kmeans(img, k, channels=np.array([0,1,2])):
+def batch_euclid(X, Y, channels):
+    return np.sqrt(np.sum(np.square(X[:, channels] - Y[:, channels]), axis=1))
+
+
+def kmeans(img, k, channels=np.array([0, 1, 2])):
     h, w, c = img.shape
-    img_flat = np.reshape(img, (h*w, 3))
-    epsilon = 1 # one rgb value minimal motion
-    previous = random.uniform(low=img.min(), high=img.max(), size=(k,3))
+    img_flat = np.reshape(img, (h * w, 3))
+    epsilon = 1  # one rgb value minimal motion
+    previous = random.uniform(low=img.min(), high=img.max(), size=(k, 3))
     centers = previous.copy()
     iter = 1
     labels = np.empty(img.shape)
@@ -26,9 +28,9 @@ def kmeans(img, k, channels=np.array([0,1,2])):
 
         previous = centers.copy()
         for kluster in np.arange(k):
-            centers[kluster,:] = img[labels == kluster].mean(axis=0)
+            centers[kluster, :] = img[labels == kluster].mean(axis=0)
             if not np.any(labels == kluster):
-                centers[kluster,:] = random.uniform(img.min(), img.max(), 3)
+                centers[kluster, :] = random.uniform(img.min(), img.max(), 3)
         distances = batch_euclid(centers, previous, channels)
         if (not np.any(distances > epsilon)) or iter > 999:
             break
@@ -38,16 +40,18 @@ def kmeans(img, k, channels=np.array([0,1,2])):
     print("Iterations: %d" % iter)
     return centers, labels
 
+
 def label_image(cluster_img, k, n=4):
     labels = np.zeros(cluster_img.shape)
     count = 0
     for c in range(k):
         cluster_img_c = cluster_img == c
-        labels_c, n_components = measure.label(cluster_img_c, neighbors=n,
-                return_num=True)
+        labels_c, n_components = measure.label(
+            cluster_img_c, neighbors=n, return_num=True)
         labels += (cluster_img_c * count) + labels_c
         count += n_components
     return labels.astype(np.int) - 1
+
 
 ################################################################################
 #                                    Task 1                                    #
@@ -78,36 +82,40 @@ def label_image(cluster_img, k, n=4):
 #                                    Task 2                                    #
 ################################################################################
 
+
 def boundary(obj_image):
     return obj_image ^ binary_erosion(obj_image)
+
 
 def region_saliency(image, labels):
     """Labels must be consecutive with no unused ones in between"""
     regions = np.unique(labels)
     C_k = np.zeros((regions.size, 3))
     for R_i in regions:
-        C_k[R_i, :] = np.average(image[labels == R_i,:], axis=0)
+        C_k[R_i, :] = np.average(image[labels == R_i, :], axis=0)
     S_R = np.zeros(regions.size)
     for R_i in regions:
         B = boundary(labels == R_i)
         boundary_idx = np.argwhere(B)
-        for x,y in boundary_idx:
-            N_4 = [(i,j) for i,j in [(x+1,y), (x,y+1), (x-1,y), (x,y-1)]
-                    if i >= 0 and i < image.shape[0] 
-                    and j >= 0 and j < image.shape[1]]
+        for x, y in boundary_idx:
+            N_4 = [(i, j)
+                   for i, j in [(x + 1, y), (x, y + 1), (x - 1, y), (x, y - 1)]
+                   if i >= 0 and i < image.shape[0] and j >= 0
+                   and j < image.shape[1]]
             neighbor_regions = [labels[idx] for idx in N_4]
             N_diff = (neighbor_regions != R_i).sum()
-            s2 = sum(np.linalg.norm(C_k[R_j,:]-C_k[R_i,:]) for R_j in
-                    neighbor_regions)
+            s2 = sum(
+                np.linalg.norm(C_k[R_j, :] - C_k[R_i, :])
+                for R_j in neighbor_regions)
             if N_diff > 1:
-                S_R[R_i] += 1/N_diff * s2
-        S_R[R_i] /= 1/B.size
+                S_R[R_i] += 1 / N_diff * s2
+        S_R[R_i] /= 1 / B.size
     return S_R
+
 
 # saliency = region_saliency(image, label_image)
 # print(np.unique(label_image))
 # print(saliency)
-
 
 ################################################################################
 #                                    Task 3                                    #
@@ -117,30 +125,33 @@ import matplotlib.pyplot as plt
 import numpy as np
 import operator
 
-steps = lambda p,q : max(map(lambda x,y: abs(x-y), p, q))+1
+steps = lambda p, q: max(map(lambda x, y: abs(x - y), p, q)) + 1
 coords = lambda p,q,s : [np.linspace(x,y,s,dtype=np.uint16) for x,y in zip(p,q)]
+
 
 def point(img, p):
     "Insert a point in the black/white image at position p"
     img[p] = 1
 
+
 def line(img, p, q):
     "Insert a line from p to q in the black/white image"
-    img[coords(p,q,steps(p,q))] = 1
+    img[coords(p, q, steps(p, q))] = 1
+
 
 def polygon(img, vertices):
     "Insert a (closed) polygon given by a list of points into the black/white image"
-    for p, q in zip(vertices, vertices[1:]+vertices[0:1]):
-        line(img,p,q)
+    for p, q in zip(vertices, vertices[1:] + vertices[0:1]):
+        line(img, p, q)
 
 
 def my_hough_line(img, angles=180):
     """
     Apply linear Hough transform to the given image.
     """
-    d_max = int(np.ceil(np.sqrt(sum(map(np.multiply,img.shape,img.shape)))))
-    accumulator = np.zeros((2*d_max, angles), np.uint64)
-    thetas = np.linspace(0, angles-1, angles, dtype=np.int)
+    d_max = int(np.ceil(np.sqrt(sum(map(np.multiply, img.shape, img.shape)))))
+    accumulator = np.zeros((2 * d_max, angles), np.uint64)
+    thetas = np.linspace(0, angles - 1, angles, dtype=np.int)
     thetas_rad = np.deg2rad(thetas)
     cos_theta = np.cos(thetas_rad)
     sin_theta = np.sin(thetas_rad)
@@ -156,14 +167,11 @@ def my_hough_line(img, angles=180):
 
 # img = np.zeros((100,100))
 
-
 # # You may try different paintings here:
 # # point(img, (10,10))
 # line(img,(00,00),(99,99))
 # line(img,(00,99),(99,00))
 # # polygon(img,[(10,30),(50,50),(10,70)])
-
-
 
 # plt.figure(figsize=(12, 4))
 # plt.gray()
@@ -185,7 +193,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import operator
 
-        
+
 def my_inverse_hough_line(accumulator, shape):
     """
     Compute an inverse Hough transform, i.e. compute the image from the accumulator space.
@@ -194,12 +202,12 @@ def my_inverse_hough_line(accumulator, shape):
 
     return img
 
+
 # img = np.zeros((100,100))
 
 # #point(img, (10,10))
 # #line(img,(10,20),(70,20))
 # polygon(img,[(10,30),(50,50),(10,70)])
-
 
 # plt.figure(figsize=(12, 4))
 # plt.gray()
@@ -216,35 +224,37 @@ def my_inverse_hough_line(accumulator, shape):
 # plt.imshow(img2)
 # plt.show()
 
-def circular_mask(shape,centre,radius,angle_range):
+
+def circular_mask(shape, centre, radius, angle_range):
     """
     From http://stackoverflow.com/a/18354475/2397253
     Return a boolean mask for a circular sector. The start/stop angles in  
     `angle_range` should be given in clockwise order.
     """
 
-    x,y = np.ogrid[:shape[0],:shape[1]]
-    cx,cy = centre
-    tmin,tmax = np.deg2rad(angle_range)
+    x, y = np.ogrid[:shape[0], :shape[1]]
+    cx, cy = centre
+    tmin, tmax = np.deg2rad(angle_range)
 
     # ensure stop angle > start angle
     if tmax < tmin:
-            tmax += 2*np.pi
+        tmax += 2 * np.pi
 
     # convert cartesian --> polar coordinates
-    r2 = (x-cx)*(x-cx) + (y-cy)*(y-cy)
-    theta = np.arctan2(x-cx,y-cy) - tmin
+    r2 = (x - cx) * (x - cx) + (y - cy) * (y - cy)
+    theta = np.arctan2(x - cx, y - cy) - tmin
 
     # wrap angles between 0 and 2*pi
-    theta %= (2*np.pi)
+    theta %= (2 * np.pi)
 
     # circular mask
-    circmask = r2 == radius*radius
+    circmask = r2 == radius * radius
 
     # angular mask
-    anglemask = theta <= (tmax-tmin)
+    anglemask = theta <= (tmax - tmin)
 
-    return circmask*anglemask
+    return circmask * anglemask
+
 
 def my_hough_circle(img, radius=10):
     """
@@ -254,12 +264,13 @@ def my_hough_circle(img, radius=10):
 
     edge_pts = np.argwhere(img)
     for x, y in edge_pts:
-        if (img.shape[0] - radius > x >= radius and img.shape[1] - radius > y >=
-                radius):
-            mask = circular_mask(img.shape, (x, y), radius, (0,360))
+        if (img.shape[0] - radius > x >= radius
+                and img.shape[1] - radius > y >= radius):
+            mask = circular_mask(img.shape, (x, y), radius, (0, 360))
             accumulator[mask] += 1
 
     return accumulator
+
 
 img = misc.imread("xmas.png")
 hough = my_hough_circle(img, radius=30)

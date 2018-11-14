@@ -6,7 +6,7 @@ from numpy.fft import fft2, ifft2, fftshift
 
 plt.gray()
 
-img = misc.imread('dolly.png', mode = 'F')
+img = misc.imread('dolly.png', mode='F')
 
 img_ft = fft2(img)
 img_ft_shift = fftshift(img_ft)
@@ -29,7 +29,6 @@ phase = np.angle(img_ft)
 # f.tight_layout()
 # f.show()
 
-
 # **c)** Transform the image back from the frequency space to the image space (again using `fft2`).
 # What do you observe? Explain and repair the result.
 
@@ -49,8 +48,10 @@ phase = np.angle(img_ft)
 # **d)** Now restore the image, but only keep the amplitude and vary the phase. Try fixed phase
 # values (0, $\pi/2$,. . . ), a random phase matrix, or a noisy version of the original phase values.
 
+
 def phase_amp_to_img(amplitude, phase):
     return np.real(ifft2(amplitude * np.exp(1j * phase)))
+
 
 amplitude = np.abs(img_ft)
 # phase_random = np.random.uniform(phase.min(), phase.max(), phase.shape)
@@ -97,23 +98,22 @@ amplitude = np.abs(img_ft)
 #     ax[i//3, i % 3].set_title(titles[i])
 # plt.show()
 
-
 # *Hint:* Python and numpy can deal with complex numbers: `np.real()` and `np.imag()` provide the real and imaginary parts. `np.abs()` and `np.angle()` provide amplitude and phase. `np.conj()` gives the complex conjugate.
 
 # ## Exercise 2 (Implementing Fourier Transform – 8p)
 
-# **a)** 
+# **a)**
 # Explain in your own words the idea of Fourier transform. What is the frequency space? What does a point in that space represent?
 # **b)** First implement a one-dimensional discrete version of Fourier transform, i.e. use the formula
 # $$ c_n = \sum_{x=0}^{L-1} f(x)\cdot e^{\tfrac{2\pi i\cdot n}{L}\cdot x} \qquad \text{for $n=0,\ldots,L-1$}$$
 # for complex valued coefficients.
-# 
+#
 # Plot the graph and the results of your Fourier transform, using the Matplotlib function `plot()`, for different functions. Compare your results with the output of the function `numpy.fft.fft`.
 
 # def fourier1d(func):
 #     """
 #     Perform a discrete 1D Fourier transform.
-    
+
 #     """
 #     L = len(func)
 #     xs = np.arange(0, L)
@@ -126,7 +126,6 @@ amplitude = np.abs(img_ft)
 #     #         sum += func[x] * np.exp(2*-1j*np.pi*n*x/len(func))
 #     #     cn.append(sum)
 #     # return cn
-
 
 # # number of points
 # L = np.arange(100)
@@ -151,9 +150,7 @@ amplitude = np.abs(img_ft)
 # plt.subplot(2,3,6); plt.plot(L,np.angle(ft_real)); plt.title('numpy FT (Frequency)')
 # plt.show()
 
-
 # # **c)** Now implement a 2-dimensional version of Fourier transform for images, using the formula from the lecture. Compare your result with the output of `fft2`.
-
 
 # def fourier2d(img):
 #     """
@@ -165,7 +162,7 @@ amplitude = np.abs(img_ft)
 #     N = img.shape[1]
 #     for u in range(0, img.shape[0]):
 #         for v in range(0, img.shape[1]):
-#             # use meshgrid to make (xx,yy) pairs for all coords in x and y. 
+#             # use meshgrid to make (xx,yy) pairs for all coords in x and y.
 #             # Like this we can evaluate the expression on a grid with fixed u, v
 #             # for all values of x and y at once
 #             xx, yy = np.meshgrid(np.arange(M), np.arange(N))
@@ -215,18 +212,17 @@ amplitude = np.abs(img_ft)
 
 # plt.show()
 
-
 # ## Exercise 3 (Applying Fourier Transform – 6p)
-# 
+#
 # 1. Read the image `text_deg.jpg`, display it and apply Fourier transform. The resulting amplitude should show the angle of the text.
-# 
+#
 # 2. Try to automatically get the rotation angle from the Fourier space. There are different ways to achieve this.
 #    Hints:
 #    * You may apply an erosion operation to strengthen the text sections and thereby get
 #      better (i.e. less noisy) amplitude values.
 #    * You may threshold the amplitudes, to only keep “relevant” values. You can then compute the angle of the largest relevant value.
 #    * Alternatively, you may apply methods you know from other lectures to get the main component and compute its angle.
-# 
+#
 # 3. Rotate the image back to its originally intended orientation (`scipy.misc.imrotate`).
 
 import numpy as np
@@ -240,11 +236,11 @@ img = misc.imread('text_deg.jpg')
 text_thresh = 240
 img = img > text_thresh
 
-structure = np.ones((2,2))
+structure = np.ones((2, 2))
 img = binary_erosion(img, structure)
 
 f = plt.figure()
-ax = f.add_subplot(2,2,1)
+ax = f.add_subplot(2, 2, 1)
 ax.set_title("theta = %d + %s erosion" % (text_thresh, structure.shape))
 ax.imshow(img)
 
@@ -254,7 +250,7 @@ amp, phase = (np.abs(ft), np.angle(ft))
 amp_thresh = 8
 amp[np.log(amp) < amp_thresh] = 0
 
-ax = f.add_subplot(2,2,2)
+ax = f.add_subplot(2, 2, 2)
 ax.set_title("log((shift(amp) >= %d) + 1)" % (amp_thresh))
 ax.imshow(np.log(np.fft.fftshift(amp + 1)))
 
@@ -263,11 +259,11 @@ hough, angles, dists = hough_line(amp)
 peak_vals, peak_angles, peak_dists = hough_line_peaks(hough, angles, dists)
 peak_angles_deg = np.rad2deg(peak_angles)
 
-ax = f.add_subplot(2,2,3)
+ax = f.add_subplot(2, 2, 3)
 ax.imshow(hough)
 ax.set_title("Hough transform of amplitude")
 
-ax = f.add_subplot(2,2,4)
+ax = f.add_subplot(2, 2, 4)
 ax.set_title("img rotated by %f°" % peak_angles_deg[0])
 ax.imshow(misc.imrotate(img, peak_angles_deg[0]))
 
